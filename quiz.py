@@ -1,8 +1,10 @@
 import js
 import random
+from pyodide.ffi import create_proxy
 
 document = js.document
 
+# Câu hỏi
 questions = [
     {"question": "What is the capital of France?", "choices": ["Paris", "London", "Berlin", "Madrid"], "answer": "Paris"},
     {"question": "What is 2 + 2?", "choices": ["3", "4", "5", "6"], "answer": "4"},
@@ -26,12 +28,13 @@ def display_question():
     document.getElementById("choices").innerHTML = choices_html
     document.getElementById("feedback").innerHTML = ""
 
-def check_answer(*args):
+def check_answer(event):
     global current_question, score
     selected = document.querySelector('input[name="choice"]:checked')
     if not selected:
         document.getElementById("feedback").innerHTML = "Please select an answer before submitting."
         return
+
     answer = selected.value
     correct_answer = questions[current_question]["answer"]
     if answer == correct_answer:
@@ -39,7 +42,7 @@ def check_answer(*args):
         document.getElementById("feedback").innerHTML = "✅ Correct!"
     else:
         document.getElementById("feedback").innerHTML = f"❌ Wrong! The correct answer is <b>{correct_answer}</b>."
-    
+
     current_question += 1
     document.getElementById("score").innerHTML = f"Score: {score}"
 
@@ -51,6 +54,9 @@ def check_answer(*args):
         document.getElementById("submit").style.display = "none"
         document.getElementById("feedback").innerHTML += f"<br><br><strong>Final Score: {score}/{len(questions)}</strong>"
 
+# Gọi khi script load xong
 display_question()
-from pyodide.ffi import create_proxy
-document.getElementById("submit").addEventListener("click", create_proxy(check_answer))
+
+# Gán sự kiện sau khi hàm đã định nghĩa
+submit_proxy = create_proxy(check_answer)
+document.getElementById("submit").addEventListener("click", submit_proxy)
