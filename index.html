@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Interactive Quiz</title>
+    <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        #question { margin: 20px 0; }
+        #choices { margin: 10px 0; }
+        #feedback { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Interactive Quiz</h1>
+    <div id="question"></div>
+    <div id="choices"></div>
+    <button pys-onClick="check_answer">Submit</button>
+    <div id="feedback"></div>
+    <div id="score">Score: 0</div>
+
+    <py-script src="quiz.py"></py-script>
+</body>
+</html>
