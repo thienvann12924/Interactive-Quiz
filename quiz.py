@@ -1,62 +1,115 @@
-import js
-import random
+import js, json, random
 from pyodide.ffi import create_proxy
 
 document = js.document
+QUESTIONS_PER_SECTION = 10
 
-# Câu hỏi
-questions = [
-    {"question": "What is the capital of France?", "choices": ["Paris", "London", "Berlin", "Madrid"], "answer": "Paris"},
-    {"question": "What is 2 + 2?", "choices": ["3", "4", "5", "6"], "answer": "4"},
-    {"question": "Which planet is known as the Red Planet?", "choices": ["Earth", "Mars", "Jupiter", "Venus"], "answer": "Mars"},
-    {"question": "What is the largest ocean?", "choices": ["Pacific", "Atlantic", "Indian", "Arctic"], "answer": "Pacific"},
-    {"question": "Who wrote 'Romeo and Juliet'?", "choices": ["Shakespeare", "Hemingway", "Tolstoy", "Twain"], "answer": "Shakespeare"},
-    {"question": "Which gas do plants absorb?", "choices": ["Oxygen", "Nitrogen", "Carbon Dioxide", "Hydrogen"], "answer": "Carbon Dioxide"}
-]
-
-random.shuffle(questions)
-
-current_question = 0
+all_questions = []
+sections = []
+current_section = None
+current_idx = 0
 score = 0
+user_answers = []
+
+def load_file(event=None):
+    file_input = document.getElementById("file-input")
+    f = file_input.files.item(0)
+    if not f:
+        document.getElementById("feedback").innerHTML = "Please select a JSON file."
+        return
+    reader = js.FileReader.new()
+    def onload(e):
+        global all_questions
+        try:
+            data = json.loads(reader.result)
+            if not isinstance(data, list):
+                raise
+            random.shuffle(data)
+            # Shuffle choices within each question
+            for q in data:
+                if "choices" in q and isinstance(q["choices"], list):
+                    random.shuffle(q["choices"])
+            all_questions = data
+            if len(data) < QUESTIONS_PER_SECTION:
+                document.getElementById("feedback").innerHTML = f"Need at least {QUESTIONS_PER_SECTION} questions."
+                return
+            document.getElementById("upload-section").style.display = "none"
+            setup_sections()
+        except:
+            document.getElementById("feedback").innerHTML = "Invalid JSON format."
+    reader.onload = create_proxy(onload)
+    reader.readAsText(f)
+
+def setup_sections():
+    global sections
+    sections = [all_questions[i:i+QUESTIONS_PER_SECTION] for i in range(0, len(all_questions), QUESTIONS_PER_SECTION)]
+    btns = ""
+    for i in range(len(sections)):
+        btns += f'<button id="sec-{i}">Section {i+1}</button> '
+    document.getElementById("section-buttons").innerHTML = btns
+    for i in range(len(sections)):
+        btn = document.getElementById(f"sec-{i}")
+        btn.addEventListener("click", create_proxy(lambda e, idx=i: start_section(idx)))
+    document.getElementById("select-section").style.display = "block"
+
+def start_section(idx):
+    global current_section, current_idx, score, user_answers
+    current_section = sections[idx]
+    current_idx = 0
+    score = 0
+    user_answers = []
+    document.getElementById("select-section").style.display = "none"
+    document.getElementById("quiz-section").style.display = "block"
+    document.getElementById("section-title").innerText = f"Section {idx+1}"
+    display_question()
 
 def display_question():
-    q = questions[current_question]
+    q = current_section[current_idx]
     document.getElementById("question").innerHTML = q["question"]
-    choices_html = ""
-    for i, choice in enumerate(q["choices"]):
-        choices_html += f'<input type="radio" name="choice" id="choice{i}" value="{choice}"> <label for="choice{i}">{choice}</label><br>'
-    document.getElementById("choices").innerHTML = choices_html
+    # render choices
+    html = ""
+    for i, ch in enumerate(q["choices"]):
+        html += f'<input type="radio" name="choice" id="c{i}" value="{ch}"> <label for="c{i}">{ch}</label><br>'
+    document.getElementById("choices").innerHTML = html
     document.getElementById("feedback").innerHTML = ""
+    document.getElementById("score").innerHTML = f"Score: {score}/{len(current_section)}"
 
-def check_answer(event):
-    global current_question, score
-    selected = document.querySelector('input[name="choice"]:checked')
-    if not selected:
-        document.getElementById("feedback").innerHTML = "Please select an answer before submitting."
+def submit_answer(event):
+    global current_idx, score
+    sel = document.querySelector('input[name="choice"]:checked')
+    if not sel:
+        document.getElementById("feedback").innerHTML = "Please select an answer."
         return
-
-    answer = selected.value
-    correct_answer = questions[current_question]["answer"]
-    if answer == correct_answer:
+    answer = sel.value
+    q = current_section[current_idx]
+    correct = (answer == q["answer"])
+    user_answers.append({"question": q["question"], "your": answer, "correct": q["answer"], "is_correct": correct})
+    if correct:
         score += 1
         document.getElementById("feedback").innerHTML = "✅ Correct!"
     else:
-        document.getElementById("feedback").innerHTML = f"❌ Wrong! The correct answer is <b>{correct_answer}</b>."
-
-    current_question += 1
-    document.getElementById("score").innerHTML = f"Score: {score}"
-
-    if current_question < len(questions):
+        document.getElementById("feedback").innerHTML = f"❌ Wrong! Correct: {q['answer']}"
+    current_idx += 1
+    if current_idx < len(current_section):
         display_question()
     else:
-        document.getElementById("question").innerHTML = "🎉 Quiz Completed!"
-        document.getElementById("choices").innerHTML = ""
-        document.getElementById("submit").style.display = "none"
-        document.getElementById("feedback").innerHTML += f"<br><br><strong>Final Score: {score}/{len(questions)}</strong>"
+        show_summary()
 
-# Gọi khi script load xong
-display_question()
+def show_summary():
+    document.getElementById("quiz-section").style.display = "none"
+    html = "<table><tr><th>#</th><th>Question</th><th>Your Answer</th><th>Correct Answer</th></tr>"
+    for i, ua in enumerate(user_answers,1):
+        cls = "correct" if ua["is_correct"] else "wrong"
+        html += f'<tr><td>{i}</td><td>{ua["question"]}</td><td class="{cls}">{ua["your"]}</td><td>{ua["correct"]}</td></tr>'
+    html += "</table>"
+    document.getElementById("summary-list").innerHTML = html
+    document.getElementById("summary").style.display = "block"
 
-# Gán sự kiện sau khi hàm đã định nghĩa
-submit_proxy = create_proxy(check_answer)
-document.getElementById("submit").addEventListener("click", submit_proxy)
+def play_again(event):
+    document.getElementById("summary").style.display = "none"
+    document.getElementById("select-section").style.display = "block"
+
+# Event bindings
+document.getElementById("load-btn").addEventListener("click", create_proxy(load_file))
+document.getElementById("submit-btn").addEventListener("click", create_proxy(submit_answer))
+document.getElementById("play-again-btn").addEventListener("click", create_proxy(play_again))
