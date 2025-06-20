@@ -52,3 +52,5 @@ def check_answer(*args):
         document.getElementById("feedback").innerHTML += f"<br><br><strong>Final Score: {score}/{len(questions)}</strong>"
 
 display_question()
+from pyodide.ffi import create_proxy
+document.getElementById("submit").addEventListener("click", create_proxy(check_answer))
