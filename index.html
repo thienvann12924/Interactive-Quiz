@@ -1,56 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Sectioned Quiz – Optimized</title>
-  <script defer src="https://pyscript.net/releases/2022.09.1/pyscript.js"></script>
-  <style>
-    body { font-family: 'Segoe UI', sans-serif; background: #f5f6fa; color: #333; padding: 20px; }
-    #quiz-box { max-width:700px; margin:auto; background:#fff; padding:20px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
-    h1, h2 { text-align:center; color:#2c3e50; }
-    #choices label { display:block; margin:5px 0; cursor:pointer; }
-    button { background:#3498db; color:#fff; border:none; border-radius:5px; padding:10px 20px; cursor:pointer; }
-    button:hover { background:#2980b9; }
-    #feedback { margin-top:10px; font-weight:bold; }
-    #summary table { width:100%; border-collapse:collapse; margin-top:15px; }
-    #summary th, #summary td { border:1px solid #ccc; padding:8px; text-align:left; }
-    #summary tr:nth-child(even) { background:#f9f9f9; }
-    .correct { color:green; }
-    .wrong { color:red; }
-  </style>
+    <meta charset="UTF-8" />
+    <title>Interactive Quiz with Upload</title>
+    <script defer src="https://pyscript.net/releases/2023.06.1/pyscript.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 700px; margin: auto; padding: 20px; }
+        #question { margin: 20px 0; font-weight: bold; font-size: 1.2em; }
+        #choices { margin: 10px 0; text-align: left; }
+        #feedback { color: green; font-weight: bold; margin: 10px 0; }
+        #score { margin-top: 15px; font-weight: bold; }
+        #results { margin-top: 30px; text-align: left; }
+        button { padding: 10px 15px; margin-top: 10px; font-size: 1em; }
+        #upload-section { margin-top: 30px; text-align: center; }
+        #part-info { margin-top: 10px; font-style: italic; color: #555; }
+    </style>
 </head>
 <body>
-  <div id="quiz-box">
-    <h1>Sectioned Quiz</h1>
-
+    <h1>Interactive Quiz with Upload</h1>
+    
     <div id="upload-section">
-      <h2>Upload JSON Questions</h2>
-      <input type="file" id="file-input" accept=".json"><br>
-      <button id="load-btn">Load Questions</button>
-      <div id="feedback"></div>
+        <label for="file-upload">Upload question file (JSON): </label>
+        <input type="file" id="file-upload" accept=".json" />
+        <div><small>File format: [{"question":"...","choices":["A","B","C"],"answer":"A"}, ...]</small></div>
     </div>
 
-    <div id="select-section" style="display:none;">
-      <h2>Select Section</h2>
-      <div id="section-buttons"></div>
-    </div>
+    <div id="part-info"></div>
+    <div id="question"></div>
+    <div id="choices"></div>
+    <button id="submit" pys-onClick="check_answer">Submit</button>
+    <div id="feedback"></div>
+    <div id="score"></div>
+    <div id="results"></div>
 
-    <div id="quiz-section" style="display:none;">
-      <h2 id="section-title"></h2>
-      <div id="question"></div>
-      <div id="choices"></div>
-      <button id="submit-btn">Submit Answer</button>
-      <div id="feedback"></div>
-      <div id="score"></div>
-    </div>
-
-    <div id="summary" style="display:none;">
-      <h2>Summary</h2>
-      <div id="summary-list"></div>
-      <button id="play-again-btn">Play Again</button>
-    </div>
-  </div>
-
-  <py-script src="quiz2.py"></py-script>
+    <py-script src="quiz2.py"></py-script>
 </body>
 </html>
